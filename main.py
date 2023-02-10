@@ -222,6 +222,5 @@ async def add_shard(callback: types.CallbackQuery):
     await callback.message.edit_text(text=f'вы добавили {shard[1]} шард, {loc}, {det}')
 
 
-
 if __name__ == "__main__":
     executor.start_polling(dp)
