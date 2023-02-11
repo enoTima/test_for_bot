@@ -10,8 +10,7 @@ dp = Dispatcher(bot)
 sa = gspread.service_account(filename="serv_acc.json")
 sh = sa.open("Осколки Е&Е")
 wks = sh.worksheet("Аркуш4")
-loc = ''
-det = ''
+user_list = {}
 menu_but = types.InlineKeyboardButton(text="меню", callback_data="menu")
 close_but = types.InlineKeyboardButton(text="❌ закрыть", callback_data="close")
 blue_but = types.InlineKeyboardButton(text="💙 cиний", callback_data="add_blue")
@@ -23,29 +22,35 @@ async def send_welcome(message: types.Message):
     await message.reply("Hi!")
 
 
-@dp.message_handler(commands=['help'])
-async def adding_shards(message: types.Message):
-    pass
+# @dp.message_handler(commands=['help'])
+# async def adding_shards(message: types.Message):
+#     pass
 
 
 @dp.message_handler(commands=['add'])
 async def adding_shards(message: types.Message):
-    buttons = [
-        types.InlineKeyboardButton(text="башня", callback_data="tower"),
-        types.InlineKeyboardButton(text="кб", callback_data="cb"),
-        types.InlineKeyboardButton(text="арена", callback_data="arena"),
-        types.InlineKeyboardButton(text="события и турниры", callback_data="events_tournament"),
-        types.InlineKeyboardButton(text="клан", callback_data="clan"),
-        types.InlineKeyboardButton(text="другое", callback_data="other"),
-        close_but
-    ]
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    keyboard.add(*buttons)
-    await message.answer("выбери раздел:", reply_markup=keyboard)
+    global user_list
+    if message.from_user.id in user_list:
+        await message.answer("вы не завершили предыдущее, завершите и попробуйте еще раз.")
+    else:
+        user_list[message.from_user.id] = []
+        buttons = [
+            types.InlineKeyboardButton(text="башня", callback_data="tower"),
+            types.InlineKeyboardButton(text="кб", callback_data="cb"),
+            types.InlineKeyboardButton(text="арена", callback_data="arena"),
+            types.InlineKeyboardButton(text="события и турниры", callback_data="events_tournament"),
+            types.InlineKeyboardButton(text="клан", callback_data="clan"),
+            types.InlineKeyboardButton(text="другое", callback_data="other"),
+            close_but
+        ]
+        keyboard = types.InlineKeyboardMarkup(row_width=2)
+        keyboard.add(*buttons)
+        await message.answer("выбери раздел:", reply_markup=keyboard)
 
 
 @dp.callback_query_handler(text='menu')
 async def menu_shards(callback: types.CallbackQuery):
+    user_list[callback.from_user.id] = []
     buttons = [
         types.InlineKeyboardButton(text="башня", callback_data="tower"),
         types.InlineKeyboardButton(text="кб", callback_data="cb"),
@@ -63,13 +68,13 @@ async def menu_shards(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text='close')
 async def close(callback: types.CallbackQuery):
+    user_list.pop(callback.from_user.id)
     await callback.message.edit_text(text='вы ничего не добавили, до встречи.')
 
 
 @dp.callback_query_handler(text='tower')
 async def tower_shards(callback: types.CallbackQuery):
-    global loc
-    loc = 'tower'
+    user_list[callback.from_user.id].append(callback.data)
     buttons = [
         types.InlineKeyboardButton(text="легкая", callback_data="normal"),
         types.InlineKeyboardButton(text="трудная", callback_data="hard"),
@@ -83,8 +88,7 @@ async def tower_shards(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text='arena')
 async def arena_shards(callback: types.CallbackQuery):
-    global loc
-    loc = 'arena'
+    user_list[callback.from_user.id].append(callback.data)
     buttons = [
         types.InlineKeyboardButton(text="обычная", callback_data="classic"),
         types.InlineKeyboardButton(text="групповая", callback_data="group"),
@@ -98,8 +102,7 @@ async def arena_shards(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text='cb')
 async def cb_shards(callback: types.CallbackQuery):
-    global loc
-    loc = 'cb'
+    user_list[callback.from_user.id].append(callback.data)
     buttons = [
         types.InlineKeyboardButton(text="4", callback_data="4cb"),
         types.InlineKeyboardButton(text="5", callback_data="5cb"),
@@ -114,8 +117,7 @@ async def cb_shards(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text='clan')
 async def clan_shards(callback: types.CallbackQuery):
-    global loc
-    loc = 'clan'
+    user_list[callback.from_user.id].append(callback.data)
     buttons = [
         types.InlineKeyboardButton(text="ТК", callback_data="tc"),
         types.InlineKeyboardButton(text="сундук", callback_data="chest"),
@@ -130,8 +132,7 @@ async def clan_shards(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text='other')
 async def other_shards(callback: types.CallbackQuery):
-    global loc
-    loc = 'other'
+    user_list[callback.from_user.id].append(callback.data)
     buttons = [
         types.InlineKeyboardButton(text="подземелья", callback_data="dange"),
         types.InlineKeyboardButton(text="рынок", callback_data="market"),
@@ -149,8 +150,7 @@ async def other_shards(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text='events_tournament')
 async def events_tournament_shards(callback: types.CallbackQuery):
-    global loc
-    loc = 'events_tournament'
+    user_list[callback.from_user.id].append(callback.data)
     buttons = [
         types.InlineKeyboardButton(text="события", callback_data="event"),
         types.InlineKeyboardButton(text="турниры", callback_data="tournament"),
@@ -164,8 +164,7 @@ async def events_tournament_shards(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text=['chest', 'dange', 'market'])
 async def blue(callback: types.CallbackQuery):
-    global det
-    det = callback.data
+    user_list[callback.from_user.id].append(callback.data)
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.add(blue_but)
     keyboard.row(close_but, menu_but)
@@ -175,8 +174,7 @@ async def blue(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text=['normal', '4cb', 'entrance'])
 async def blue_void(callback: types.CallbackQuery):
-    global det
-    det = callback.data
+    user_list[callback.from_user.id].append(callback.data)
     buttons = [
         blue_but, void_but,
         close_but, menu_but
@@ -190,8 +188,7 @@ async def blue_void(callback: types.CallbackQuery):
 @dp.callback_query_handler(text=['hard', 'classic', 'group', '5cb', '6cb', 'tc',
                                  'missions', 'tasks', 'store', 'event', 'tournament'])
 async def blue_void_sacral(callback: types.CallbackQuery):
-    global det
-    det = callback.data
+    user_list[callback.from_user.id].append(callback.data)
     buttons = [
         blue_but, void_but,
         types.InlineKeyboardButton(text="💛 сакрал", callback_data="add_sacral"),
@@ -205,8 +202,7 @@ async def blue_void_sacral(callback: types.CallbackQuery):
 
 @dp.callback_query_handler(text='shop')
 async def void(callback: types.CallbackQuery):
-    global det
-    det = callback.data
+    user_list[callback.from_user.id].append(callback.data)
     keyboard = types.InlineKeyboardMarkup(row_width=2)
     keyboard.row(void_but)
     keyboard.row(close_but, menu_but)
@@ -218,8 +214,12 @@ async def void(callback: types.CallbackQuery):
 async def add_shard(callback: types.CallbackQuery):
     shard = callback.data.split('_')
     d = datetime.date.today()
-    wks.append_row([f'{d.day}.{d.month}.{d.year}', callback.from_user.id, shard[1], loc, det])
-    await callback.message.edit_text(text=f'вы добавили {shard[1]} шард, {loc}, {det}')
+    wks.append_row([f'{d.day}.{d.month}.{d.year}', callback.from_user.id, shard[1],
+                    user_list[callback.from_user.id][0], user_list[callback.from_user.id][1]])
+    await callback.message.edit_text(text=f'вы добавили {shard[1]} шард, '
+                                          f'{user_list[callback.from_user.id][0]}, '
+                                          f'{user_list[callback.from_user.id][1]}')
+    user_list.pop(callback.from_user.id)
 
 
 if __name__ == "__main__":
